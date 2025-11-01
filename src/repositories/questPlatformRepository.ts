@@ -4,6 +4,7 @@ import * as dotenv from "dotenv";
 import {
     createPublicClient,
     createWalletClient,
+    getContract,
     http,
     type Address,
     type Hash,
@@ -24,9 +25,11 @@ export class QuestPlatformRepository {
   private publicClient: PublicClient;
   private walletClient?: WalletClient;
   private account?: Address;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  contract: any;
 
   constructor() {
-    this.contractAddress = process.env.QUEST_ADDRESS as Address;
+    this.contractAddress = process.env.CONTRACT_ADDRESS as Address;
     const rpcUrl = process.env.RPC_URL;
 
     // Khởi tạo public client (cho read operations)
@@ -39,7 +42,7 @@ export class QuestPlatformRepository {
     });
 
     // Nếu có private key thì tạo wallet client (cho write operations)
-    const privateKey = process.env.OPERATOR_PRIVATE_KEY;
+    const privateKey = process.env.WALLET_PRIVATE_KEY;
     if (privateKey) {
       const account = privateKeyToAccount(privateKey as `0x${string}`);
       this.account = account.address;
@@ -50,8 +53,14 @@ export class QuestPlatformRepository {
         transport: http(rpcUrl),
       });
     } else {
-      console.warn("No OPERATOR_PRIVATE_KEY found - read-only mode");
+      throw new Error("WALLET_PRIVATE_KEY is required in environment variables for write operations");
     }
+
+    this.contract = getContract({
+      address: this.contractAddress,
+      abi: QuestPlatformABI,
+      client: this.walletClient || this.publicClient, // dùng signer nếu có
+    });
   }
 
   // ============================================
