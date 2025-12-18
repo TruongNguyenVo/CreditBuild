@@ -1,19 +1,36 @@
 // src/repositories/QuestPlatformRepository.ts
-import QuestPlatformABI from "@/contracts/QuestPlatform.json";
+import QuestPlatformABI from "@/lib/abi/QuestPlatform.json";
 import * as dotenv from "dotenv";
+import * as path from "path";
 import {
-    createPublicClient,
-    createWalletClient,
-    getContract,
-    http,
-    type Address,
-    type Hash,
-    type PublicClient,
-    type WalletClient,
+  createPublicClient,
+  createWalletClient,
+  getContract,
+  http,
+  type Address,
+  type Hash,
+  type PublicClient,
+  type WalletClient,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { creditCoin3Testnet } from "viem/chains";
-dotenv.config();
+
+// Load .env từ root project - thử nhiều cách để đảm bảo tìm được file
+// 1. Từ process.cwd() (thư mục chạy lệnh)
+// 2. Từ __dirname (cho trường hợp compiled)
+const envPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(__dirname, '../../../.env'),
+];
+
+for (const envPath of envPaths) {
+  const result = dotenv.config({ path: envPath });
+  if (!result.error && process.env.RPC_URL) {
+    console.log(`[QuestPlatformRepository] Loaded .env from: ${envPath}`);
+    break;
+  }
+}
 
 /**
  * QuestPlatformRepository
@@ -24,13 +41,18 @@ export class QuestPlatformRepository {
   private contractAddress: Address;
   private publicClient: PublicClient;
   private walletClient?: WalletClient;
-  private account?: Address;
+  private account?: PrivateKeyAccount; // Đổi từ Address sang PrivateKeyAccount
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contract: any;
 
   constructor() {
     this.contractAddress = process.env.CONTRACT_ADDRESS as Address;
     const rpcUrl = process.env.RPC_URL;
+
+    // Debug: log env values để kiểm tra
+    // console.log('[QuestPlatformRepository] CONTRACT_ADDRESS:', this.contractAddress);
+    // console.log('[QuestPlatformRepository] RPC_URL:', rpcUrl);
+    // console.log('[QuestPlatformRepository] WALLET_PRIVATE_KEY:', process.env.WALLET_PRIVATE_KEY ? '***SET***' : 'NOT SET');
 
     // Khởi tạo public client (cho read operations)
     if (!rpcUrl) {
@@ -45,7 +67,7 @@ export class QuestPlatformRepository {
     const privateKey = process.env.WALLET_PRIVATE_KEY;
     if (privateKey) {
       const account = privateKeyToAccount(privateKey as `0x${string}`);
-      this.account = account.address;
+      this.account = account; // Lưu cả Account object, không chỉ address
 
       this.walletClient = createWalletClient({
         account,

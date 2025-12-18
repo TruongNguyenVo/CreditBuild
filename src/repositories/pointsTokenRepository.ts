@@ -1,16 +1,16 @@
 // src/repositories/PointsTokenRepository.ts
-import PointsTokenABI from "@/contracts/PointsToken.json";
+import PointsTokenABI from "@/lib/abi/PointsToken.json";
 import dotenv from "dotenv";
 import {
-    createPublicClient,
-    createWalletClient,
-    formatUnits,
-    http,
-    parseUnits,
-    type Address,
-    type Hash,
-    type PublicClient,
-    type WalletClient,
+  createPublicClient,
+  createWalletClient,
+  formatUnits,
+  http,
+  parseUnits,
+  type Address,
+  type Hash,
+  type PublicClient,
+  type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { creditCoin3Testnet } from "viem/chains";
